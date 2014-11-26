@@ -1,0 +1,37 @@
+.certificate-notice-box{
+	margin:50px;
+	padding:30px;
+}
+
+.certificate-check .param{
+	font-weight:bold;
+}
+
+.certificate-valid{
+	background-color:#397313;
+	color:white;
+	font-weight:bolder;
+	font-size:110%;
+	padding:8px;
+	border-radius:5px;
+}
+
+.certificate-invalid{
+	background-color:#B70004;
+	color:white;
+	font-weight:bolder;
+	font-size:110%;
+	padding:8px;
+	border-radius:5px;
+}
+
+.certificate-invalid-code{
+	background-color:#B70004;
+	color:white;
+	font-weight:bolder;
+	font-size:180%;
+	padding:30px;
+	border-radius:5px;
+	text-align:center;
+	margin:40px;
+}
