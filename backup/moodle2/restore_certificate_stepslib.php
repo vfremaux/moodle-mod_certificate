@@ -54,6 +54,10 @@ class restore_certificate_activity_structure_step extends restore_activity_struc
         $data->course = $this->get_courseid();
         $data->timecreated = $this->apply_date_offset($data->timecreated);
         $data->timemodified = $this->apply_date_offset($data->timemodified);
+        $data->printconfig = '';
+        if (!isset($data->layout)) {
+            $data->layout = '';
+        }
 
         // insert the certificate record
         $newitemid = $DB->insert_record('certificate', $data);
@@ -77,5 +81,8 @@ class restore_certificate_activity_structure_step extends restore_activity_struc
     protected function after_execute() {
         // Add certificate related files, no need to match by itemname (just internally handled context)
         $this->add_related_files('mod_certificate', 'issue', 'certificate_issue');
+        $this->add_related_files('mod_certificate', 'printwmark', 'certificate_issue');
+        $this->add_related_files('mod_certificate', 'printseal', 'certificate_issue');
+        $this->add_related_files('mod_certificate', 'printsignature', 'certificate_issue');
     }
 }

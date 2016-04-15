@@ -125,18 +125,20 @@ class restore_certificate_activity_task extends restore_activity_task {
                 ON c.id = cm.instance
                 WHERE cm.id = :cmid";
         if ($certificate = $DB->get_record_sql($sql, (array('cmid'=>$this->get_moduleid())))) {
+
+            $printconfig = unserialize(@$certificate->printconfig);
             // A flag to check if we need to update the database or not
             $update = false;
-            if ($certificate->printdate > 2) { // If greater than 2, then it is a grade item value
-                if ($newitem = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'course_module', $certificate->printdate)) {
+            if (@$printconfig->printdate > 2) { // If greater than 2, then it is a grade item value
+                if ($newitem = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'course_module', $printconfig->printdate)) {
                     $update = true;
-                    $certificate->printdate = $newitem->newitemid;
+                    $printconfig->printdate = $newitem->newitemid;
                 }
             }
-            if ($certificate->printgrade > 2) {
-                if ($newitem = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'course_module', $certificate->printgrade)) {
+            if ($printconfig->printgrade > 2) {
+                if ($newitem = restore_dbops::get_backup_ids_record($this->get_restoreid(), 'course_module', $printconfig->printgrade)) {
                     $update = true;
-                    $certificate->printgrade = $newitem->newitemid;
+                    $printconfig->printgrade = $newitem->newitemid;
                 }
             }
             if ($update) {

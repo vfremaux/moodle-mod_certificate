@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -24,17 +23,17 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once("../../config.php");
-require_once("$CFG->dirroot/mod/certificate/deprecatedlib.php");
-require_once("$CFG->dirroot/mod/certificate/lib.php");
-require_once("$CFG->libdir/pdflib.php");
+require('../../config.php');
+require_once($CFG->dirroot.'/mod/certificate/deprecatedlib.php');
+require_once($CFG->dirroot.'/mod/certificate/lib.php');
+require_once($CFG->libdir.'/pdflib.php');
 
 $id = required_param('id', PARAM_INT);    // Course Module ID.
 $action = optional_param('what', '', PARAM_ALPHA);
 $edit = optional_param('edit', -1, PARAM_BOOL);
 
-if (!$cm = get_coursemodule_from_id('certificate', $id)) {
-    print_error('Course Module ID was incorrect');
+if (!$cm = $DB->get_record('course_modules', array('id' => $id))) {
+    print_error('invalidcoursemodule');
 }
 
 if (!$course = $DB->get_record('course', array('id' => $cm->course))) {
@@ -49,12 +48,26 @@ require_login($course->id, false, $cm);
 $context = context_module::instance($cm->id);
 require_capability('mod/certificate:view', $context);
 
-// log update
-add_to_log($course->id, 'certificate', 'view', "view.php?id=$cm->id", $certificate->id, $cm->id);
-$completion=new completion_info($course);
+// Log update.
+// add_to_log($course->id, 'certificate', 'view', "view.php?id=$cm->id", $certificate->id, $cm->id);
+
+// Trigger module viewed event.
+$eventparams = array(
+    'objectid' => $certificate->id,
+    'context' => $context,
+);
+
+$event = \mod_certificate\event\course_module_viewed::create($eventparams);
+$event->add_record_snapshot('course_modules', $cm);
+$event->add_record_snapshot('course', $course);
+$event->add_record_snapshot('certificate', $certificate);
+$event->trigger();
+
+$completion = new completion_info($course);
 $completion->set_module_viewed($cm);
 
-// Initialize $PAGE, compute blocks
+// Initialize $PAGE.
+
 $PAGE->set_url('/mod/certificate/view.php', array('id' => $cm->id));
 $PAGE->set_context($context);
 $PAGE->set_cm($cm);
@@ -68,35 +81,42 @@ if (($edit != -1) and $PAGE->user_allowed_editing()) {
      $USER->editing = $edit;
 }
 
-// Add block editing button
+// Add block editing button.
 if ($PAGE->user_allowed_editing()) {
     $editvalue = $PAGE->user_is_editing() ? 'off' : 'on';
     $strsubmit = $PAGE->user_is_editing() ? get_string('blockseditoff') : get_string('blocksediton');
-    $url = new moodle_url($CFG->wwwroot . '/mod/certificate/view.php', array('id' => $cm->id, 'edit' => $editvalue));
+    $url = new moodle_url('/mod/certificate/view.php', array('id' => $cm->id, 'edit' => $editvalue));
     $PAGE->set_button($OUTPUT->single_button($url, $strsubmit));
 }
 
-// Check if the user can view the certificate
+// Check if the user can view the certificate.
 if ($certificate->requiredtime && !has_capability('mod/certificate:manage', $context)) {
     if (certificate_get_course_time($course->id) < ($certificate->requiredtime * 60)) {
         $a = new stdClass;
         $a->requiredtime = $certificate->requiredtime;
-        notice(get_string('requiredtimenotmet', 'certificate', $a), "$CFG->wwwroot/course/view.php?id=$course->id");
+        echo $OUTPUT->notification(get_string('requiredtimenotmet', 'certificate', $a), new moodle_url('/course/view.php', array('id' => $course->id)));
         die;
     }
 }
 
-// Create new certificate record, or return existing record
+if ($certificate->lockoncoursecompletion && !has_capability('mod/certificate:manage', $context)) {
+    $completioninfo = new completion_info($course);
+    if (!$completioninfo->is_course_complete($USER->id)) {
+        echo $OUTPUT->notification(get_string('requiredcoursecompletion', 'certificate'), new moodle_url('/course/view.php', array('id' => $course->id)));
+    }
+}
+
+// Create new certificate record, or return existing record.
 $certrecord = certificate_get_issue($course, $USER, $certificate, $cm);
 
-if ($certrecord && !has_any_capability(array('mod/certificate:manage', 'mod/certificate:getown'), $context)){
-	// student can not access to his certificate because not allowed
-	// probably the certificate needs to be delivered by another person
+if ($certrecord && !has_any_capability(array('mod/certificate:manage', 'mod/certificate:getown'), $context)) {
+    /*
+     * student can not access to his certificate because not allowed
+     * probably the certificate needs to be delivered by another person
+     */
     echo $OUTPUT->header();
     echo $OUTPUT->heading(get_string('certification', 'certificate')); 
-
     echo $OUTPUT->box(get_string('certificationmatchednotdeliverable', 'certificate'), 'certificate-notice-box'); 
-
     echo $OUTPUT->footer();
     die;
 }
@@ -107,22 +127,16 @@ if ($certrecord && !has_any_capability(array('mod/certificate:manage', 'mod/cert
 make_cache_directory('tcpdf');
 
 // Load the specific certificate type.
-require("$CFG->dirroot/mod/certificate/type/$certificate->certificatetype/certificate.php");
+$user = $USER; // see for self
+require($CFG->dirroot.'/mod/certificate/type/'.$certificate->certificatetype.'/certificate.php');
 
 if (empty($action)) { // Not displaying PDF
     echo $OUTPUT->header();
-    
-    /// find out current groups mode
-    groups_print_activity_menu($cm, $CFG->wwwroot . '/mod/certificate/view.php?id=' . $cm->id);
+
+    // Find out current groups mode.
+    groups_print_activity_menu($cm, new moodle_url('/mod/certificate/view.php', array('id' => $cm->id)));
     $currentgroup = groups_get_activity_group($cm);
     $groupmode = groups_get_activity_groupmode($cm);
-
-    if (has_capability('mod/certificate:manage', $context)) {
-        $numusers = count(certificate_get_issues($certificate->id, 'ci.timecreated ASC', $groupmode, $cm));
-        $url = html_writer::tag('a', get_string('viewcertificateviews', 'certificate', $numusers),
-            array('href' => $CFG->wwwroot . '/mod/certificate/report.php?id=' . $cm->id));
-        echo html_writer::tag('div', $url, array('class' => 'reportlink'));
-    }
 
     if (!empty($certificate->intro)) {
         echo $OUTPUT->box(format_module_intro('certificate', $certificate, $cm->id), 'generalbox', 'intro');
@@ -131,29 +145,77 @@ if (empty($action)) { // Not displaying PDF
     if ($attempts = certificate_get_attempts($certificate->id)) {
         echo certificate_print_attempts($course, $certificate, $attempts);
     }
-    if ($certificate->delivery == 0)    {
+
+    if ($certificate->delivery == 0) {
         $str = get_string('openwindow', 'certificate');
-    } elseif ($certificate->delivery == 1)    {
+    } elseif ($certificate->delivery == 1) {
         $str = get_string('opendownload', 'certificate');
-    } elseif ($certificate->delivery == 2)    {
+    } elseif ($certificate->delivery == 2) {
         $str = get_string('openemail', 'certificate');
     }
+
     echo html_writer::tag('p', $str, array('style' => 'text-align:center'));
     $linkname = get_string('getcertificate', 'certificate');
-    // Add to log, only if we are reissuing
-    add_to_log($course->id, 'certificate', 'view', "view.php?id=$cm->id", $certificate->id, $cm->id);
 
     $link = new moodle_url('/mod/certificate/view.php', array('id' => $cm->id, 'what' => 'get'));
     $button = new single_button($link, $linkname);
     $button->add_action(new popup_action('click', $link, 'view'.$cm->id, array('height' => 600, 'width' => 800)));
 
-    echo html_writer::tag('div', $OUTPUT->render($button), array('style' => 'text-align:center'));
-    echo $OUTPUT->footer($course);
+    $coursecontext = context_course::instance($COURSE->id);
+
+    if (has_capability('mod/certificate:getown', $context, $USER, false)) {
+        $linkname = get_string('getcertificate', 'certificate');
+        $link = new moodle_url('/mod/certificate/view.php', array('id' => $cm->id, 'what' => 'get'));
+        $button = new single_button($link, $linkname);
+        $button->add_action(new popup_action('click', $link, 'view'.$cm->id, array('height' => 600, 'width' => 800)));
+        echo html_writer::tag('div', $OUTPUT->render($button), array('style' => 'text-align:center'));
+        $confirm = true;
+    } elseif (has_capability('mod/certificate:addinstance', $coursecontext)) {
+        $linkname = get_string('gettestcertificate', 'certificate');
+        $link = new moodle_url('/mod/certificate/view.php', array('id' => $cm->id, 'what' => 'get'));
+        $button = new single_button($link, $linkname);
+        $button->add_action(new popup_action('click', $link, 'view'.$cm->id, array('height' => 600, 'width' => 800)));
+        echo html_writer::tag('div', $OUTPUT->render($button), array('style' => 'text-align:center'));
+
+        if (has_capability('mod/certificate:manage', $context)) {
+            $numusers = count(certificate_get_issues($certificate->id, 'ci.timecreated ASC', $groupmode, $cm));
+            $linkname = get_string('viewcertificateviews', 'certificate', $numusers);
+            $link = new moodle_url('/mod/certificate/report.php', array('id' => $cm->id));
+            $button = new single_button($link, $linkname);
+            echo '<div style="text-align:center"><a href="'.$link.'">'.$OUTPUT->render($button).'</a></div>';
+
+            /*
+            // Not ready.
+            $linkname = get_string('editcertificatelayout', 'certificate');
+            $link = new moodle_url('/mod/certificate/formatbuilder.php', array('id' => $cm->id));
+            $button = new single_button($link, $linkname);
+            $button->add_action(new popup_action('click', $link, 'view'.$cm->id, array('height' => 600, 'width' => 800)));
+            echo html_writer::tag('div', $OUTPUT->render($button), array('style' => 'text-align:center'));
+            */
+        }
+    }
+
+    echo $OUTPUT->footer();
+
     exit;
 } else { // Output to pdf
+
+    // Trigger module viewed event.
+    $eventparams = array(
+        'objectid' => $certificate->id,
+        'context' => $context,
+    );
+
+    $event = \mod_certificate\event\course_module_issued::create($eventparams);
+    $event->add_record_snapshot('course_modules', $cm);
+    $event->add_record_snapshot('course', $course);
+    $event->add_record_snapshot('certificate', $certificate);
+    $event->trigger();
+
     // Remove full-stop at the end if it exists, to avoid "..pdf" being created and being filtered by clean_filename
     $certname = rtrim($certificate->name, '.');
     $filename = clean_filename("$certname.pdf");
+    certificate_confirm_issue($user, $certificate, $cm);
     if ($certificate->savecert == 1) {
         // PDF contents are now in $file_contents as a string
        $file_contents = $pdf->Output('', 'S');

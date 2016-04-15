@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -24,11 +23,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once('../../config.php');
-require_once('lib.php');
-require_once("$CFG->libdir/pdflib.php");
+require('../../config.php');
+require_once($CFG->dirroot.'/mod/certificate/lib.php');
+require_once($CFG->libdir.'/pdflib.php');
 
-// Retrieve any variables that are passed
+// Retrieve any variables that are passed.
 $id = required_param('id', PARAM_INT);    // Course Module ID
 $action = optional_param('what', '', PARAM_ALPHA);
 
@@ -44,31 +43,32 @@ if (!$certificate = $DB->get_record('certificate', array('id' => $cm->instance))
     print_error('course module is incorrect');
 }
 
-// Requires a course login
+// Requires a course login.
 require_course_login($course->id, true, $cm);
 
-// Check the capabilities
+// Check the capabilities.
 $context = context_module::instance($cm->id);
 require_capability('mod/certificate:view', $context);
 
-// Initialize $PAGE, compute blocks
+// Initialize $PAGE, compute blocks.
 $PAGE->set_url('/mod/certificate/review.php', array('id' => $cm->id));
 $PAGE->set_context($context);
 $PAGE->set_cm($cm);
 $PAGE->set_title(format_string($certificate->name));
 $PAGE->set_heading(format_string($course->fullname));
 
-// Get previous cert record
+// Get previous cert record.
 if (!$certrecord = $DB->get_record('certificate_issues', array('userid' => $USER->id, 'certificateid' => $certificate->id))) {
-    notice(get_string('nocertificatesissued', 'certificate'), "$CFG->wwwroot/course/view.php?id=$course->id");
+    notice(get_string('nocertificatesissued', 'certificate'), new moodle_url('/course/view.php', array('id' => $course->id)));
     die;
 }
 
-// Load the specific certificatetype
-require ("$CFG->dirroot/mod/certificate/type/$certificate->certificatetype/certificate.php");
+// Load the specific certificatetype.
+$user = $USER; // ensure we have user
+require($CFG->dirroot.'/mod/certificate/type/'.$certificate->certificatetype.'/certificate.php');
 
 if ($action) {
-    // Remove full-stop at the end if it exists, to avoid "..pdf" being created and being filtered by clean_filename
+    // Remove full-stop at the end if it exists, to avoid "..pdf" being created and being filtered by clean_filename.
     $certname = rtrim($certificate->name, '.');
     $filename = clean_filename("$certname.pdf");
     $pdf->Output($filename, 'I'); // open in browser
@@ -79,9 +79,9 @@ echo $OUTPUT->header();
 
 if (has_capability('mod/certificate:manage', $context)) {
     $numusers = count(certificate_get_issues($certificate->id, 'ci.timecreated ASC', '', $cm));
-    $url = html_writer::tag('a', get_string('viewcertificateviews', 'certificate', $numusers),
-        array('href' => $CFG->wwwroot . '/mod/certificate/report.php?id=' . $cm->id));
-    echo html_writer::tag('div', $url, array('class' => 'reportlink'));
+    $url = new moodle_url('/mod/certificate/report.php', array('id' => $cm->id));
+    $link = html_writer::tag('a', get_string('viewcertificateviews', 'certificate', $numusers), array('href' => $url));
+    echo html_writer::tag('div', $link, array('class' => 'reportlink'));
 }
 
 if (!empty($certificate->intro)) {

@@ -49,9 +49,9 @@ $capabilities = array(
         )
     ),
 
-	// if this capability is NOT set, the owner CANNOT 
-	// retrieve his own certification document. When having a "view"
-	// capability although, the owner will be able to see his certification final "state"
+    // if this capability is NOT set, the owner CANNOT 
+    // retrieve his own certification document. When having a "view"
+    // capability although, the owner will be able to see his certification final "state"
 
     'mod/certificate:getown' => array(
         'captype' => 'read',

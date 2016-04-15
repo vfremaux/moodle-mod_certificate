@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -57,10 +56,9 @@ if ($upload_form->is_cancelled()) {
         throw new coding_exception('File upload failed');
     }
 
-    redirect(new moodle_url('/admin/settings.php?section=modsettingcertificate'), get_string('changessaved'));
+    redirect(new moodle_url('/admin/settings.php', array('section' => 'modsettingcertificate')), get_string('changessaved'));
 }
 
 echo $OUTPUT->header();
 echo $upload_form->display();
 echo $OUTPUT->footer();
-?>

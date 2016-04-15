@@ -39,10 +39,9 @@ class backup_certificate_activity_structure_step extends backup_activity_structu
         // Define each element separated
         $certificate = new backup_nested_element('certificate', array('id'), array(
             'name', 'intro', 'introformat', 'emailteachers', 'emailothers',
-            'savecert', 'reportcert', 'delivery', 'certificatetype', 'orientation',
-            'borderstyle', 'bordercolor', 'printwmark', 'printdate', 'datefmt', 'printnumber',
-            'printgrade', 'gradefmt', 'printoutcome', 'printhours', 'printteacher', 'customtext',
-            'printsignature', 'printseal', 'timecreated', 'timemodified', 'caption', 'validitytime'));
+            'savecert', 'reportcert', 'delivery', 'certificatetype', 'requiredtime',
+            'orientation', 'printconfig', 'datefmt', 'gradefmt', 'statement', 
+            'customtext','timecreated', 'timemodified', 'caption', 'certifierid', 'validitytime', 'layout', 'propagategroups'));
 
         $issues = new backup_nested_element('issues');
 
@@ -67,6 +66,9 @@ class backup_certificate_activity_structure_step extends backup_activity_structu
         // Define file annotations
         $certificate->annotate_files('mod_certificate', 'intro', null); // This file area hasn't itemid
         $issue->annotate_files('mod_certificate', 'issue', 'id');
+        $issue->annotate_files('mod_certificate', 'printwmark', 'id');
+        $issue->annotate_files('mod_certificate', 'printseal', 'id');
+        $issue->annotate_files('mod_certificate', 'printsignature', 'id');
 
         // Return the root element (certificate), wrapped into standard activity structure
         return $this->prepare_activity_structure($certificate);

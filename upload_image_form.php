@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -33,7 +32,7 @@ require_once($CFG->dirroot.'/mod/certificate/lib.php');
 
 class mod_certificate_upload_image_form extends moodleform {
 
-    function definition() {
+    public function definition() {
         global $CFG;
 
         $mform =& $this->_form;
@@ -56,7 +55,7 @@ class mod_certificate_upload_image_form extends moodleform {
     /**
      * Some validation - Michael Avelar <michaela@moodlerooms.com>
      */
-    function validation($data, $files) {
+    public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
         $supportedtypes = array('jpe' => 'image/jpeg',

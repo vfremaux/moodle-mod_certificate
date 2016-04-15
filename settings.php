@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -31,4 +30,5 @@ require_once($CFG->dirroot.'/mod/certificate/adminsetting.class.php');
 $settings->add(new mod_certificate_admin_setting_upload('certificate/uploadimage',
     get_string('uploadimage', 'certificate'), get_string('uploadimagedesc', 'certificate'), ''));
 
-?>
+$settings->add(new admin_setting_configcheckbox('certificate/defaultpropagategroups',
+    get_string('defaultpropagategroups', 'certificate'), get_string('defaultpropagategroups_desc', 'certificate'), ''));

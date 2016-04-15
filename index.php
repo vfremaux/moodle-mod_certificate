@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -25,7 +24,7 @@
  */
 
 require_once('../../config.php');
-require_once('lib.php');
+require_once($CFG->dirroot.'/mod/certificate/lib.php');
 
 $id = required_param('id', PARAM_INT);           // Course Module ID
 
@@ -56,7 +55,12 @@ $PAGE->set_title($strcertificates);
 $PAGE->set_heading($course->fullname);
 
 // Add the page view to the Moodle log
-add_to_log($course->id, 'certificate', 'view all', 'index.php?id='.$course->id, '');
+// add_to_log($course->id, 'certificate', 'view all', 'index.php?id='.$course->id, '');
+
+// Trigger instances list viewed event.
+$event = \mod_certificate\event\course_module_instance_list_viewed::create(array('context' => $context));
+$event->add_record_snapshot('course', $course);
+$event->trigger();
 
 // Get the certificates, if there are none display a notice
 if (!$certificates = get_all_instances_in_course('certificate', $course)) {

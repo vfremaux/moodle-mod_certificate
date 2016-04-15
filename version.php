@@ -20,14 +20,14 @@
  *
  * @package    mod
  * @subpackage certificate
- * @copyright  Mark Nelson <markn@moodle.com>
+ * @copyright  Valery Fremaux <valery.fremaux@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or late
  */
 
-$module->version   = 2014042700; // The current module version (Date: YYYYMMDDXX)
+$module->version   = 2016041500; // The current module version (Date: YYYYMMDDXX)
 $module->requires  = 2010112400; // Requires this Moodle version
 $module->cron      = 0; // Period for cron to check this module (secs)
 $module->component = 'mod_certificate';
 
 $module->maturity  = MATURITY_STABLE;
-$module->release   = "VFConsulting (2014042700)"; // User-friendly version number
+$module->release   = "2.7.0 (2016041500)"; // User-friendly version number

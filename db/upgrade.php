@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of the Certificate module for Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -247,7 +246,7 @@ function xmldb_certificate_upgrade($oldversion=0) {
                         // Not valid skip it
                         continue;
                     }
-                    $condition_info = new condition_info($cm, CONDITION_MISSING_EVERYTHING);
+                    $condition_info = new \core_availability\info_module($cm, CONDITION_MISSING_EVERYTHING);
                     $condition_info->add_grade_condition($gradeitem->id, $cert->requiredgrade, '110');
                 }
             }
@@ -289,7 +288,7 @@ function xmldb_certificate_upgrade($oldversion=0) {
                         // Not valid skip it
                         continue;
                     }
-                    $condition_info = new condition_info($cm, CONDITION_MISSING_EVERYTHING);
+                    $condition_info = new \core_availability\info_module($cm, CONDITION_MISSING_EVERYTHING);
                     $condition_info->add_grade_condition($gradeitem->id, $link->linkgrade, '110', true);
                 }
             }
@@ -484,6 +483,86 @@ function xmldb_certificate_upgrade($oldversion=0) {
         upgrade_mod_savepoint(true, 2012090901, 'certificate');
     }
 
+    if ($oldversion < 2013090902) {
+
+    // Define table certificate_linked_courses to be created
+        $table = new xmldb_table('certificate_linked_courses');
+
+    // Adding fields to table certificate_linked_courses
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('certificateid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null);
+        $table->add_field('courseid', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null);
+        $table->add_field('mandatory', XMLDB_TYPE_INTEGER, '1', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
+        $table->add_field('roletobegiven', XMLDB_TYPE_INTEGER, '10', XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0');
+
+    // Adding keys to table certificate_linked_courses
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+    // Launch create table for certificate_linked_courses
+        if (!$dbman->table_exists($table)){
+            $dbman->create_table($table);
+        }
+
+        $table  = new xmldb_table('certificate');
+
+        $field = new xmldb_field('setcertification', XMLDB_TYPE_TEXT, 'small', null, null, null, null, 'printhours');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('setcertificationcontext', XMLDB_TYPE_INTEGER, '6', null, XMLDB_NOTNULL, null, '50', 'setcertification');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+           $field = new xmldb_field('groupspecificcontent', XMLDB_TYPE_CHAR, '10', null, null, null, null, 'setcertificationcontext');
+
+        // Launch add field certificatecaption.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('certifierid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'printhours');
+
+        // Launch add field certifierid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Certificate savepoint reached
+        upgrade_mod_savepoint(true, 2013090902, 'certificate');
+    }
+
+    if ($oldversion < 2013102701) {
+
+        // Define table certificate_linked_courses to be created.
+        $table = new xmldb_table('certificate_issues');
+
+        $field = new xmldb_field('delivered', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, 0, 'timecreated');
+
+        // Launch add field delivered.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('timedelivered', XMLDB_TYPE_INTEGER, '11', null, XMLDB_NOTNULL, null, 0, 'delivered');
+
+        // Launch add field timedelivered.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('authorityid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'timedelivered');
+
+        // Launch add field authorityid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Certificate savepoint reached
+        upgrade_mod_savepoint(true, 2013102701, 'certificate');
+    }
+
     if ($oldversion < 2014042600) {
         $table = new xmldb_table('certificate');
 
@@ -492,7 +571,7 @@ function xmldb_certificate_upgrade($oldversion=0) {
             $dbman->add_field($table, $field);
         }
 
-        // Certificate savepoint reached
+        // Certificate savepoint reached.
         upgrade_mod_savepoint(true, 2014042600, 'certificate');
     }
 
@@ -504,9 +583,140 @@ function xmldb_certificate_upgrade($oldversion=0) {
             $dbman->add_field($table, $field);
         }
 
-        // Certificate savepoint reached
+        // Certificate savepoint reached.
         upgrade_mod_savepoint(true, 2014042700, 'certificate');
     }
 
+    if ($oldversion < 2015062800) {
+        $table = new xmldb_table('certificate');
+
+        $field = new xmldb_field('layout', XMLDB_TYPE_TEXT, 'big', null, null, null, null, 'validitytime');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Certificate savepoint reached.
+        upgrade_mod_savepoint(true, 2015062800, 'certificate');
+    }
+
     return true;
+
+    if ($oldversion < 2016011801) {
+        $table = new xmldb_table('certificate');
+
+        $field = new xmldb_field('propagategroups', XMLDB_TYPE_INTEGER, 1, XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, 'layout');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        certificate_convert_config($dbman);
+
+        // Certificate savepoint reached.
+        upgrade_mod_savepoint(true, 2016011801, 'certificate');
+    }
+
+    if ($oldversion < 20160421500) {
+        $table = new xmldb_table('certificate');
+
+        $field = new xmldb_field('lockoncoursecompletion', XMLDB_TYPE_INTEGER, 1, XMLDB_UNSIGNED, XMLDB_NOTNULL, null, null, 'propagategroups');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Certificate savepoint reached.
+        upgrade_mod_savepoint(true, 2016041500, 'certificate');
+    }
+
+    return true;
+}
+
+function certificate_convert_config($dbman) {
+    global $DB;
+
+    $table = new xmldb_table('certificate');
+
+    $field = new xmldb_field('printconfig', XMLDB_TYPE_TEXT, 'medium', null, null, null, null, 'gradefmt');
+    if (!$dbman->field_exists($table, $field)) {
+        $dbman->add_field($table, $field);
+
+        // Process all certificates to convert them
+        if ($certificates = $DB->get_records('certificate', array())) {
+            foreach ($certificates as $c) {
+                $printconfig = new StdClass();
+                $printconfig->printhours = @$certificate->printhours;
+                $printconfig->printoutcome = 0 + @$certificate->printoutcome;
+                $printconfig->printdate = 0 + @$certificate->printdate;
+                $printconfig->printteacher = 0 + @$certificate->printteacher;
+                if (isset($certificate->printnumber)) {
+                    $printconfig->printcode = 0 + @$certificate->printnumber;
+                } else {
+                    $printconfig->printcode = 0 + @$certificate->printcode;
+                }
+                $printconfig->printseal = 0 + @$certificate->printseal; // may be obsolete but let catch it
+                $printconfig->printsignature = 0 + @$certificate->printsignature;
+                $printconfig->printwmark = 0 + @$certificate->printwmark;
+                $printconfig->printqrcode = 0 + @$certificate->printqrcode;
+                $printconfig->printgrade = 0 + @$certificate->printgrade;
+
+                $certificate->printconfig = serialize($printconfig);
+                $DB->set_field('certificate', 'printconfig', $certificate->printconfig);
+            }
+        }
+
+        $field = new xmldb_field('printhours', XMLDB_TYPE_CHAR, 255, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printseal', XMLDB_TYPE_CHAR, 255, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printwmark', XMLDB_TYPE_CHAR, 255, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printsignature', XMLDB_TYPE_CHAR, 255, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printgrade', XMLDB_TYPE_INTEGER, 10, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printoutcome', XMLDB_TYPE_INTEGER, 10, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printdate', XMLDB_TYPE_INTEGER, 10, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printteacher', XMLDB_TYPE_INTEGER, 10, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printnumber', XMLDB_TYPE_INTEGER, 1, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printcode', XMLDB_TYPE_INTEGER, 1, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+
+        $field = new xmldb_field('printqrcode', XMLDB_TYPE_INTEGER, 1, null, null, null, null);
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->drop_field($table, $field);
+        }
+    }
+
 }
