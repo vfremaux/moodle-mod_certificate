@@ -56,7 +56,7 @@ class mod_certificate_mod_form extends moodleform_mod {
         $mform->addElement('text', 'caption', get_string('certificatecaption', 'certificate'), array('size' => 128, 'maxlength' => 255));
         $mform->setType('caption', PARAM_CLEANHTML);
 
-        $this->add_intro_editor(false, get_string('intro', 'certificate'));
+        $this->standard_intro_elements();
 
         // Issue options
         $mform->addElement('header', 'issueoptions', get_string('issueoptions', 'certificate'));
