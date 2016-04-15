@@ -18,16 +18,16 @@
 /**
  * Code fragment to define the version of the certificate module
  *
- * @package    mod
- * @subpackage certificate
+ * @category    mod
+ * @package mod_certificate
  * @copyright  Valery Fremaux <valery.fremaux@gmail.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or late
  */
 
-$module->version   = 2016041500; // The current module version (Date: YYYYMMDDXX)
-$module->requires  = 2014050800; // Requires this Moodle version
-$module->cron      = 0; // Period for cron to check this module (secs)
-$module->component = 'mod_certificate';
+$plugin->version   = 2016041500; // The current module version (Date: YYYYMMDDXX)
+$plugin->requires  = 2014111400; // Requires this Moodle version
+$plugin->cron      = 0; // Period for cron to check this module (secs)
+$plugin->component = 'mod_certificate';
 
-$module->maturity  = MATURITY_STABLE;
-$module->release   = "2.8.0 (2016041500)"; // User-friendly version number
+$plugin->maturity  = MATURITY_STABLE;
+$plugin->release   = "2.9.0 (2016041500)"; // User-friendly version number
